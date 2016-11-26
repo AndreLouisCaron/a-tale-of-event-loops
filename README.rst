@@ -101,6 +101,8 @@ coroutine when resuming it with a 2nd, 3rd or Nth call to ``.send()``.
 If, instead of returning normally, the coroutine fails with an exception, then
 that exception will be propagated back through ``.send()``.
 
+.. code:: python
+
    >>> class Hello(Exception):
    ...    def __init__(self, name):
    ...        self._name = name
@@ -121,6 +123,8 @@ that exception will be propagated back through ``.send()``.
 I also mentioned a ``.throw()`` method.  Like ``.send()``, it resumes the
 coroutine, but instead of passing it a value, it raises an exception inside the
 coroutine at the point where it was suspended.
+
+.. code:: python
 
    >>> class Hello(Exception):
    ...    def __init__(self, name):
@@ -409,14 +413,14 @@ event loop "requests" sent by our awaitable objects.
    Hello, world!
    (after join)
 
- For practical reasons, we'll probably want to have some kind ``Task`` wrapper
- for coroutine objects.  This comes handy to expose an API for cancellation and
- to handle some race conditions such as the child task ending before the parent
- task attempts to ``join()`` it (can you spot the bug?)
+For practical reasons, we'll probably want to have some kind ``Task`` wrapper
+for coroutine objects.  This comes handy to expose an API for cancellation and
+to handle some race conditions such as the child task ending before the parent
+task attempts to ``join()`` it (can you spot the bug?)
 
- Passing the child task's return value back as the result of ``await join()``
- and propagating the exception that crashed the child are left as exercices to
- the reader.
+Passing the child task's return value back as the result of ``await join()``
+and propagating the exception that crashed the child are left as exercices to
+the reader.
 
 
 Sleeping & timers
