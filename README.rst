@@ -49,8 +49,8 @@ The real nature of coroutines
 
 First, let's take a look at what happens when you call a coroutine.
 
-**Hint**: you get a coroutine *object*, which has a ``.send()`` and a
- ``.throw()`` method, just like generator objects do.
+**Hint**: you get a "coroutine object", which has a ``.send()`` and a
+``.throw()`` method, just like generator objects do.
 
 .. code:: python
 
@@ -194,8 +194,8 @@ awaitable objects in a style reminescent of `@contextlib.contextmanager`_.
    ...     pass
    Hello, world!
 
- Of course, our ``nice()`` object is pretty useless.  Don't fret, we'll be
- doing some more useful things shortly.
+Of course, our ``nice()`` object is pretty useless.  Don't fret, we'll be doing
+some more useful things shortly.
 
 
 Looping
