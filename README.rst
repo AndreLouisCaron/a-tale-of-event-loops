@@ -426,7 +426,91 @@ the reader.
 Sleeping & timers
 -----------------
 
-TODO
+Now that we have task scheduling under control, we can start tackling some more
+advanced stuff like timers & I/O.  I/O is the ultimate goal, but it pulls in a
+lot of new stuff, so we'll look at timers first.
+
+If you need to sleep, you can't just call ``time.sleep()`` because you'll be
+blocking *all* tasks, not just the one you want to suspend.
+
+You have probably spotted the pattern now.  We'll be adding two things:
+
+#. a new type of request
+#. a bit of dispatch code based on the return value of ``task.send()``.
+
+We'll also add some bookkeeping to track tasks that while they're suspended.
+Remember that ``tasks`` is a list of coroutines that are scheduled to run in
+the next tick, but sleeping tasks will likely skip one or more ticks before
+they are ready to run again.
+
+Keep in mind that sleeping tasks are unlikely to be rescheduled in FIFO order,
+so we'll need somthing a little more evolved.  The most practical way to keep
+timers (until you allow cancelling them) is to use a priority queue and the
+standard library's heapq_ module thankfully makes that super easy.
+
+.. _heapq: https://docs.python.org/3.5/library/heapq.html
+
+.. code:: python
+
+   >>> from heapq import heappop, heappush
+   >>> from time import sleep as _sleep
+   >>> from timeit import default_timer
+   >>> from types import coroutine
+   >>>
+   >>> # NEW: we need to keep track of elasped time.
+   >>> clock = default_timer
+   >>>
+   >>> # NEW: request that the event loop reschedule us "later".
+   >>> @coroutine
+   ... def sleep(seconds):
+   ...     yield ('sleep', seconds)
+   >>>
+   >>> # NEW: verify elapsed time matches our request.
+   >>> async def hello(name):
+   ...     ref = clock()
+   ...     await sleep(3.0)
+   ...     now = clock()
+   ...     assert (now - ref) >= 3.0
+   ...     print('Hello, %s!' % (name,))
+   >>>
+   >>> def run_until_complete(task):
+   ...     tasks = [(task, None)]
+   ...
+   ...     # NEW: keep track of tasks that are sleeping.
+   ...     timers = []
+   ...
+   ...     # NEW: watch out, all tasks might be suspended at the same time.
+   ...     while tasks or timers:
+   ...
+   ...         # NEW: if we have nothing to do for now, don't spin.
+   ...         if not tasks:
+   ...             _sleep(max(0.0, timers[0][0] - clock()))
+   ...
+   ...         # NEW: schedule tasks when their timer has elapsed.
+   ...         while timers and timers[0][0] < clock():
+   ...             _, task = heappop(timers)
+   ...             tasks.append((task, None))
+   ...
+   ...         queue, tasks = tasks, []
+   ...         for task, data in queue:
+   ...             try:
+   ...                 data = task.send(data)
+   ...             except StopIteration:
+   ...                 pass
+   ...             else:
+   ...                 # NEW: set a timer and don't reschedule right away.
+   ...                 if data and data[0] == 'sleep':
+   ...                     heappush(timers, (clock() + data[1], task))
+   ...                 else:
+   ...                     tasks.append((task, None))
+   >>>
+   >>> run_until_complete(hello('world'))
+   Hello, world!
+
+Wow, we're really getting the hang of this!  Maybe this async stuff is not so
+hard after all?
+
+Let's see what we can do for I/O!
 
 
 Handling I/O
