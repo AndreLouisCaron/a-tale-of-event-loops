@@ -5,7 +5,7 @@ A tale of event loops
 =====================
 
 I was recently stuck by the *amazing* insight from `Nathaniel J. Smith`_, a
-fellow at Berkely, about asyncio_.  His post `Some thoughts on asynchronous API
+fellow at Berkeley, about asyncio_.  His post `Some thoughts on asynchronous API
 design in a post-async/await world`_ helped me put some words on the (slightly)
 mixed feelings I have about asyncio after using it a lot recently.
 
@@ -22,7 +22,7 @@ you have a version of Python that implements `PEP 492`_ (``async`` and
 .. _`PEP 492`: https://www.python.org/dev/peps/pep-0492/
 
 I was intrigued and took a look at curio's source and... due to it gaining a
-lot of features (hopefully briging it closer to a production-ready library), I
+lot of features (hopefully bringing it closer to a production-ready library), I
 think it has enough features now that the main essence is diluted.  This is
 definitely *not* a bad thing, but if, like me, you'd like to understand what
 Nathaniel was talking about, and learn a few neat Python tricks, reading
@@ -30,12 +30,12 @@ curio's source code is hardly a good starting point.
 
 `Brett Cannon`_, a Python core developer gives some very good insight on how to
 use coroutine objects (e.g. if you were implementing an event loop) in his post
-`How the heck does async/await work inPython 3.5?`_.  His focus is on the
+`How the heck does async/await work in Python 3.5?`_.  His focus is on the
 implementation details and, at least for me, there was still a small piece
 missing to grok curio.
 
 .. _`Brett Cannon`: http://www.snarky.ca/
-.. _`How the heck does async/await work inPython 3.5?`: http://www.snarky.ca/how-the-heck-does-async-await-work-in-python-3-5
+.. _`How the heck does async/await work in Python 3.5?`: http://www.snarky.ca/how-the-heck-does-async-await-work-in-python-3-5
 
 **TL; DR**: This is my attempt at trying to capture the core fundamentals on
 which curio is based.  Hopefully, it will be a good stepping stone to get
@@ -67,7 +67,7 @@ First, let's take a look at what happens when you call a coroutine.
    >>>
    ...
 
-Of course you usually don't use these methods because they are hidden behind
+Of course, you usually don't use these methods because they are hidden behind
 ``await coro`` and ``asyncio.get_event_loop().run_until_complete()``, but since
 we're trying to look into how *that* works... :-)
 
@@ -156,7 +156,7 @@ A dialog with the event loop
 ----------------------------
 
 If you look around (or try it), you will notice that coroutine functions, in
-contast with generator functions, cannot use the ``yield`` expression.  This
+contrast with generator functions, cannot use the ``yield`` expression.  This
 raises (*not* begs_) the question: how exactly can coroutine functions yield
 control back to the code that called ``.send()``?
 
@@ -166,7 +166,7 @@ The answer implies using ``await`` on an *awaitable* object.  For an object to
 be awaitable, it must implement the special ``__await__()`` method that returns
 an iterable.  In practice, this is a little awkward, so there is a
 `@types.coroutine` decorator in the standard library that allows you to create
-awaitable objects in a style reminescent of `@contextlib.contextmanager`_.
+awaitable objects in a style reminiscent of `@contextlib.contextmanager`_.
 
 .. _`@types.coroutine`: https://docs.python.org/3.5/library/types.html#types.coroutine_
 .. _`@contextlib.contextmanager`: https://docs.python.org/3.5/library/contextlib.html#contextlib.contextmanager
@@ -201,7 +201,7 @@ some more useful things shortly.
 Looping
 -------
 
-Our previous example calls ``.send()`` exactly twice because it nows that
+Our previous example calls ``.send()`` exactly twice because it knows that
 ``hello()`` will only yield control once.  When we don't know (the common
 case), we need to put this in a loop.
 
@@ -270,7 +270,7 @@ The main thing we need to do here is to introduce a new ``spawn()`` primitive
 that schedules the new child task.  Once the task is scheduled, we want to
 return control to the parent task so that it can continue on its way.
 
-**Note**: this example is deliberaly incomplete.  We'll see how to join tasks
+**Note**: this example is deliberately incomplete.  We'll see how to join tasks
 later.
 
 .. code:: python
@@ -349,7 +349,7 @@ In short, that's the gist of the coroutine-based scheduler loop.
 
 
 **However**, before we get into the more complicated timers & I/O... remember
-earlier when I mentionned that the example was deliberately incomplete?  We
+earlier when I mentioned that the example was deliberately incomplete?  We
 know how to spawn new child tasks, but we don't yet know how to wait for them
 to complete.  This a good opportunity to see how we extend the vocabulary of
 event loop "requests" sent by our awaitable objects.
@@ -400,7 +400,7 @@ event loop "requests" sent by our awaitable objects.
    ...                 tasks.extend((t, None) for t in watch.pop(task, []))
    ...             else:
    ...                 # NEW: dispatch request sent by awaitable object since
-   ...                 #      we now have 3 diffent types of requests.
+   ...                 #      we now have 3 different types of requests.
    ...                 if data and data[0] == 'spawn':
    ...                     tasks.append((data[1], None))
    ...                     tasks.append((task, data[1]))
@@ -419,7 +419,7 @@ to handle some race conditions such as the child task ending before the parent
 task attempts to ``join()`` it (can you spot the bug?)
 
 Passing the child task's return value back as the result of ``await join()``
-and propagating the exception that crashed the child are left as exercices to
+and propagating the exception that crashed the child are left as exercises to
 the reader.
 
 
@@ -444,7 +444,7 @@ the next tick, but sleeping tasks will likely skip one or more ticks before
 they are ready to run again.
 
 Keep in mind that sleeping tasks are unlikely to be rescheduled in FIFO order,
-so we'll need somthing a little more evolved.  The most practical way to keep
+so we'll need something a little more evolved.  The most practical way to keep
 timers (until you allow cancelling them) is to use a priority queue and the
 standard library's heapq_ module thankfully makes that super easy.
 
@@ -457,7 +457,7 @@ standard library's heapq_ module thankfully makes that super easy.
    >>> from timeit import default_timer
    >>> from types import coroutine
    >>>
-   >>> # NEW: we need to keep track of elasped time.
+   >>> # NEW: we need to keep track of elapsed time.
    >>> clock = default_timer
    >>>
    >>> # NEW: request that the event loop reschedule us "later".
@@ -618,7 +618,7 @@ to know their "state".
 
 Otherwise, it's a simple extension of task spawning and joining.
 
-**Note**: this implementation is deliberately imcomplete.  It does not properly
+**Note**: this implementation is deliberately incomplete.  It does not properly
 handle the possibility of cancelling a task that is already scheduled to run in
 the next tick.
 
@@ -716,3 +716,4 @@ This document is copyright Andre Caron <andre.l.caron@gmail.com> and is made
 available to you under a Creative Commons CC-BY-SA_ license.
 
 .. _CC-BY-SA: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
